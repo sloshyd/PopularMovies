@@ -22,11 +22,13 @@ import uk.co.sloshyd.popularmovies.data.MovieClass;
  * Created by Darren on 13/05/2017.
  * IMPORTANT: Inorder for the code to work it must have a valid API_KEY from TheMoviedb.org this
  * should be pasted into the API_KEY Constant;
+ *
+ * NOTE: This will not work without a valid API_KEY pasted into API_KEY constant
  */
 
 public class Utils {
 
-    private static final String API_KEY = "api_key=8fa9c9ea7b5ebdfac69758e769f80f04";
+    private static final String API_KEY = "";
     private static final String BASE_URL_POPULAR = "http://api.themoviedb.org/3/movie/popular?";
     private static final String BASE_URL_RATED= "http://api.themoviedb.org/3/movie/top_rated?";
     public static final String POPULAR_MOVIE_URL = BASE_URL_POPULAR + API_KEY;
