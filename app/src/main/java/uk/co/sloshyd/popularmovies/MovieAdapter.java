@@ -1,11 +1,16 @@
 package uk.co.sloshyd.popularmovies;
 
 import android.content.Context;
+import android.content.Intent;
+import android.os.Parcel;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.TextView;
+import android.widget.ImageView;
+
+import com.squareup.picasso.Picasso;
 
 import uk.co.sloshyd.popularmovies.data.MovieClass;
 
@@ -16,10 +21,18 @@ import uk.co.sloshyd.popularmovies.data.MovieClass;
 public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapterViewHolder> {
 
     private MovieClass[] mMovies;
+    private Context mContext;
+    private final MovieAdapterOnClickHandler mClickHandler;
 
+    public MovieAdapter (Context context, MovieAdapterOnClickHandler clickHandler ){
+        mContext = context;
+        mClickHandler = clickHandler;
 
-    public MovieAdapter (){
+    }
 
+    //use the handler to get the selected list item object so it can be passed to the Activity where intent can be called
+    public interface MovieAdapterOnClickHandler{
+        void onClick(MovieClass movieDataItem);
     }
 
     @Override
@@ -37,16 +50,31 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder holder, int position) {
-        String data = mMovies[position].getmOverview();
-        holder.mTextView.setText(data);
+        String posterReference  = mMovies[position].getmPosterPath();
+        //String posterURL = Utils.IMAGE_BASE_URL + posterReference;
+        Log.i("TAG", "URL IMAGE : " + posterReference);
+        Utils.loadPosterImage(holder.mPosterImage,mContext,posterReference);
+        //Picasso.with(mContext).load(posterURL).into(holder.mPosterImage);
     }
 
-    public class MovieAdapterViewHolder extends RecyclerView.ViewHolder{
-        public final TextView mTextView;
+    public class MovieAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener{
+        public final ImageView mPosterImage;
 
         public MovieAdapterViewHolder(View itemView) {
             super(itemView);
-            mTextView = (TextView) itemView.findViewById(R.id.image_view_list_poster);
+            mPosterImage = (ImageView) itemView.findViewById(R.id.image_view_list_poster);
+            //set the onClicklistener
+            itemView.setOnClickListener(this);
+        }
+
+        @Override
+        public void onClick(View view) {
+            //get postion in adapter
+            int position = getAdapterPosition();
+            MovieClass selectedMovie = mMovies[position];
+            mClickHandler.onClick(selectedMovie);//handler can now pass this to activity
+
+
         }
     }
 

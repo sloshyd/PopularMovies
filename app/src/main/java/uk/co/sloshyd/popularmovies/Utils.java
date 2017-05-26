@@ -1,6 +1,10 @@
 package uk.co.sloshyd.popularmovies;
 
+import android.content.Context;
 import android.util.Log;
+import android.widget.ImageView;
+
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -27,12 +31,14 @@ public class Utils {
     private static final String BASE_URL_RATED= "http://api.themoviedb.org/3/movie/top_rated?";
     public static final String POPULAR_MOVIE_URL = BASE_URL_POPULAR + API_KEY;
     public static final String TOP_RATED_MOVIE_URL = BASE_URL_RATED + API_KEY;
+    public static final String IMAGE_BASE_URL = "http://image.tmdb.org/t/p/w185/";
     //JSON Key names
     private static final String POSTER_PATH = "poster_path";
     private static final String OVERVIEW = "overview";
     private static final String RELEASE_DATE ="release_date";
     private static final String MOVIE_TITLE = "title";
     private static final String VOTE_AVERAGE ="vote_average";
+    public static final String INTENT_PUTEXTRA_MOVIE_DATA = "movie_data";
 
     public static final String TAG = Utils.class.getName();
 
@@ -109,4 +115,8 @@ public class Utils {
         return jsonParsedDataArray;
     }
 
+    public static void loadPosterImage(ImageView view, Context context, String posterReference ){
+        String posterURL = Utils.IMAGE_BASE_URL + posterReference;
+        Picasso.with(context).load(posterURL).into(view);
+    }
 }

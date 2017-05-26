@@ -1,3 +1,9 @@
 <resources>
     <string name="app_name">Popular Movies</string>
+    <!--Labels on Details Page -->
+    <string name="label_release_date">Release Date: </string>
+    <string name="label_average_votes">Average Vote: </string>
+    <string name="popular_movies_menu_title">Movies - Most Popular</string>
+    <string name="top_rated_movies_menu_title">Movies - Top Rated</string>
+    <string name="error_message">An error occurred trying to load data.  Please check you can connect to the internet</string>
 </resources>

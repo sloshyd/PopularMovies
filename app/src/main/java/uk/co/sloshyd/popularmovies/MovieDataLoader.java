@@ -37,7 +37,6 @@ public class MovieDataLoader extends AsyncTaskLoader<MovieClass[]> {
     @Override
     public MovieClass[] loadInBackground() {
 
-        Log.i("TAG", "LOAD IN BACKGROUND");
         String response = null;
         try {
             response = Utils.getResponseFromHttpUrl(mDataUri);
