@@ -9,16 +9,13 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.Toast;
 
-import org.w3c.dom.Text;
-
+import uk.co.sloshyd.popularmovies.Loaders.MovieDataLoader;
 import uk.co.sloshyd.popularmovies.data.MovieClass;
 
 public class ListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<MovieClass[]> ,
@@ -51,7 +48,7 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
         //set up Error message for no returned data
         mErrorTextView = (TextView) findViewById(R.id.tv_error_message_display);
         //get reference to RecyclerView
-        mRecyclerView = (RecyclerView) findViewById(R.id.recyler_view);
+        mRecyclerView = (RecyclerView) findViewById(R.id.receyler_view);
         //set up layout manager
         GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
 

@@ -6,4 +6,6 @@
     <string name="popular_movies_menu_title">Movies - Most Popular</string>
     <string name="top_rated_movies_menu_title">Movies - Top Rated</string>
     <string name="error_message">An error occurred trying to load data.  Please check you can connect to the internet</string>
+    <string name="detail_trailer_title_label">Top 3 Movie Trailers</string>
+    <string name="detail_reviews_title_label">Movie Reviews</string>
 </resources>

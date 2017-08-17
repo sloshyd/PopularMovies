@@ -15,14 +15,16 @@ public class MovieClass implements Parcelable {
     private String mReleaseDate;
     private String mTitle;
     private double mAverageVote;
+    private String mID;
 
     public MovieClass (String posterPath, String overView,
-                       String releaseDate, String title, double averageVote){
+                       String releaseDate, String title, double averageVote, String id){
         mPosterPath = posterPath;
         mOverview = overView;
         mReleaseDate = releaseDate;
         mTitle = title;
         mAverageVote = averageVote;
+        mID = id;
 
     }
 
@@ -32,6 +34,7 @@ public class MovieClass implements Parcelable {
         mReleaseDate = in.readString();
         mTitle = in.readString();
         mAverageVote = in.readDouble();
+        mID = in.readString();
     }
 
     public String getmPosterPath() {
@@ -54,6 +57,10 @@ public class MovieClass implements Parcelable {
         return mAverageVote;
     }
 
+    public String getId() {
+        return mID;
+    }
+
     @Override
     public String toString() {
         return "MovieClass{" +
@@ -62,6 +69,7 @@ public class MovieClass implements Parcelable {
                 ", mReleaseDate='" + mReleaseDate + '\'' +
                 ", mTitle='" + mTitle + '\'' +
                 ", mAverageVote=" + mAverageVote +
+                ", mID=" + mID +
                 '}';
     }
 
@@ -77,9 +85,10 @@ public class MovieClass implements Parcelable {
         out.writeString(mReleaseDate);
         out.writeString(mTitle);
         out.writeDouble(mAverageVote);
+        out.writeString(mID);
     }
 
-    //must hve CREATOR to create object from parcel data
+    //must have CREATOR to create object from parcel data
     public static final Parcelable.Creator<MovieClass> CREATOR
             = new Parcelable.Creator<MovieClass>() {
         public MovieClass createFromParcel(Parcel in) {
