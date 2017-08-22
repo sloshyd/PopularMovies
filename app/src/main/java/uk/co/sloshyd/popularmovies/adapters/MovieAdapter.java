@@ -1,4 +1,4 @@
-package uk.co.sloshyd.popularmovies;
+package uk.co.sloshyd.popularmovies.adapters;
 
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
@@ -7,6 +7,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
+import uk.co.sloshyd.popularmovies.R;
+import uk.co.sloshyd.popularmovies.Utils;
 import uk.co.sloshyd.popularmovies.data.MovieClass;
 
 /**
@@ -46,10 +48,8 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder holder, int position) {
         String posterReference = mMovies[position].getmPosterPath();
-        //String posterURL = Utils.IMAGE_BASE_URL + posterReference;
-        //Log.i("TAG", "URL IMAGE : " + posterReference);
         Utils.loadPosterImage(holder.mPosterImage, mContext, posterReference);
-        //Picasso.with(mContext).load(posterURL).into(holder.mPosterImage);
+
     }
 
     public class MovieAdapterViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {

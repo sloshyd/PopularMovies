@@ -1,14 +1,15 @@
-package uk.co.sloshyd.popularmovies;
+package uk.co.sloshyd.popularmovies.adapters;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import uk.co.sloshyd.popularmovies.R;
+import uk.co.sloshyd.popularmovies.Utils;
 
 
 /**

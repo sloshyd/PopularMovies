@@ -3,18 +3,24 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".ListActivity">
+    tools:context=".activities.ListActivity">
 
     <item
         android:id="@+id/action_most_popular"
         android:orderInCategory="1"
-        android:title="Most Popular"
+        android:title="@string/menu_item_most_popular_movie"
         app:showAsAction="never" />
 
     <item
         android:id="@+id/action_top_rated"
         android:orderInCategory="2"
-        android:title="Top Rated"
-        app:showAsAction="never" />
+        android:title="@string/menu_item_highest_rated_movies"
+        app:showAsAction="never"/>
+
+    <item
+        android:id="@+id/action_my_favorites"
+        android:orderInCategory="3"
+        android:title="@string/menu_item_my_favorites"
+        app:showAsAction="never"/>
 
 </menu>

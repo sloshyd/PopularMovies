@@ -8,4 +8,12 @@
     <string name="error_message">An error occurred trying to load data.  Please check you can connect to the internet</string>
     <string name="detail_trailer_title_label">Top 3 Movie Trailers</string>
     <string name="detail_reviews_title_label">Movie Reviews</string>
+    <string name="btn_favorite">Add Favorite</string>
+    <string name="my_favorite_movies_menu_title">Movies - Favorite</string>
+    <string name="menu_item_most_popular_movie">Popular</string>
+    <string name="menu_item_highest_rated_movies">Top Rated</string>
+    <string name="menu_item_my_favorites">My Movies</string>
+    <string name="toast_message_successfully_added_move">Movie added to favorites</string>
+    <string name="toast_message_unsuccessfully_add_move">Unable to add to favorites</string>
+    <string name="tv_no_favorites_message">Opps !!!! - We are unable to find any favorites.  Please select movie and add it to your favorites using the \"add favorite\" button</string>
 </resources>
