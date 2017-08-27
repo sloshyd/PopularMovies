@@ -1,12 +1,10 @@
 package uk.co.sloshyd.popularmovies;
 
-import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
-import android.net.Uri;
 import android.util.Log;
 import android.widget.ImageView;
 
