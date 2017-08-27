@@ -1,26 +1,26 @@
 package uk.co.sloshyd.popularmovies.activities;
 
 import android.app.LoaderManager;
+import android.content.BroadcastReceiver;
 import android.content.ContentValues;
+import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.Loader;
 import android.database.Cursor;
 import android.databinding.DataBindingUtil;
 import android.graphics.Bitmap;
-import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
-import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import java.io.ByteArrayOutputStream;
 
 import uk.co.sloshyd.popularmovies.Loaders.ReviewsLoader;
 import uk.co.sloshyd.popularmovies.Loaders.TrailersLoader;
@@ -30,8 +30,8 @@ import uk.co.sloshyd.popularmovies.adapters.DetailReviewsAdapter;
 import uk.co.sloshyd.popularmovies.data.MovieClass;
 import uk.co.sloshyd.popularmovies.data.MovieContract;
 import uk.co.sloshyd.popularmovies.databinding.ActivityDetailBinding;
-import uk.co.sloshyd.popularmovies.data.MovieContract.MovieEntry;
-
+import uk.co.sloshyd.popularmovies.sync.LoadDataService;
+import uk.co.sloshyd.popularmovies.sync.Tasks;
 
 
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ContentValues[]> {
@@ -46,23 +46,31 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private static final String YOU_TUBE_URL = "http://www.youtube.com/watch?v=";
     private static final int NUMBER_OF_TRAILERS_TO_SHOW = 3;
     public static final String TAG = DetailActivity.class.getSimpleName();
-    private static final boolean IS_MOVIE_FAVORITE = false;
+    public boolean isFavorite;
+    public SavedDataBroadcastReceiver mBroadcastReceiver;
 
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        //destroy the broadcastreceiver
+        LocalBroadcastManager.getInstance(this).unregisterReceiver(mBroadcastReceiver);
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         //initialize the binding object and set contentView
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_detail);
-
-
         Intent intent = getIntent();
         mMovieData = intent.getParcelableExtra(Utils.INTENT_PUTEXTRA_MOVIE_DATA);
-        mLoadManager = getLoaderManager();
-        //initialize loaders
-        mLoadManager.initLoader(TRAILER_LOADER_ID, null, this);
-        mLoadManager.initLoader(REVIEW_LOADER_ID, null, this);
-        //setup views
+        isMoveFavorite();
 
         mBinding.tvDetailTitle.setText(mMovieData.getmTitle());
         mBinding.tvDetailOverview.setText(mMovieData.getmOverview());
@@ -72,9 +80,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         String outOfTenVote = averageVoteString + " / 10 ";
         mBinding.viewDetailVotes.setText(outOfTenVote);
 
-
-        Utils.loadPosterImage(mBinding.imageViewDetailPoster, this, mMovieData.getmPosterPath());
-
         //set up adapter for the reviews section
         mBinding.reviewsRecylerView.findViewById(R.id.reviews_recyler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
@@ -82,7 +87,16 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mBinding.reviewsRecylerView.setHasFixedSize(true);
         mAdapter = new DetailReviewsAdapter(this);
         mBinding.reviewsRecylerView.setAdapter(mAdapter);
-        isMoveFavorite();
+
+        //set up broadcastReceiver and intentfilter for response for savedData
+        mBroadcastReceiver = new SavedDataBroadcastReceiver();
+        IntentFilter filter = new IntentFilter(Tasks.INSERT_COMPLETE);
+        filter.addAction(Tasks.INSERT_FAIL);
+        filter.addAction(Tasks.DELETE_COMPLETE);
+        filter.addAction(Tasks.DELETE_FAIL);
+        LocalBroadcastManager.getInstance(this).registerReceiver(
+                mBroadcastReceiver, filter);
+
     }
 
     @Override
@@ -124,7 +138,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 throw new IllegalArgumentException("Invalid loader id");
         }
 
-
     }
 
     @Override
@@ -144,7 +157,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         }
 
     }
-
 
 
     public void createViews(ContentValues[] contentValues) {
@@ -175,7 +187,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         }
     }
 
-
     public View getView() {
 
         return View.inflate(getBaseContext(), R.layout.trailer_list, null);
@@ -189,20 +200,20 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         playIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                launchTraierIntent(v, trailerID);
+                launchTrailerIntent(v, trailerID);
             }
         });
         ImageView shareIcon = (ImageView) v.findViewById(R.id.iv_share_trailer_icon);
         shareIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                launchTraierIntent(v, trailerID);
+                launchTrailerIntent(v, trailerID);
             }
         });
         return v;
     }
 
-    public void launchTraierIntent(View v, String id) {
+    public void launchTrailerIntent(View v, String id) {
         int viewId = v.getId();
 
         Uri uri = Uri.parse(YOU_TUBE_URL + id);
@@ -225,36 +236,31 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
     public void addToFavorites(View v) {
 
-        ImageView imageView = (ImageView) findViewById(R.id.image_view_detail_poster);
-        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
-        byte[] imageInByte = baos.toByteArray();
+        Intent serviceIntent = new Intent(this, LoadDataService.class);
 
-        ContentValues contentValues = new ContentValues();
-        contentValues.put(MovieEntry.COLUMN_NAME_MOVIE_TITLE, mMovieData.getmTitle());
-        contentValues.put(MovieEntry.COLUMN_NAME_RELEASE_DATE, mMovieData.getmReleaseDate());
-        contentValues.put(MovieEntry.COLUMN_NAME_MOVIE_RATING, mMovieData.getmAverageVote());
-        contentValues.put(MovieEntry.COLUMN_NAME_MOVIE_DESCRIPTION, mMovieData.getmOverview());
-        contentValues.put(MovieEntry.COLUMN_NAME_MOVIE_POSTER, imageInByte);
-        contentValues.put(MovieEntry.COLUMN_NAME_MOVIE_ID, mMovieData.getId());
-
-        Uri uri = getContentResolver().insert(MovieContract.CONTENT_URI, contentValues);
-        if (uri == null) {
-            Toast.makeText(this, R.string.toast_message_unsuccessfully_add_move, Toast.LENGTH_SHORT).show();
-            Log.i(TAG, "Error loading movie into database");
+        if (!isFavorite) {
+            byte[] imageInByte = Utils.getImageDataFromView(mBinding.imageViewDetailPoster);
+            mMovieData.setPosterData(imageInByte);
+            serviceIntent.setData(MovieContract.CONTENT_URI);
+            serviceIntent.setAction(Tasks.ACTION_ADD_RECORD);
+            serviceIntent.putExtra("data", mMovieData);
+            startService(serviceIntent);
         } else {
-            Toast.makeText(this, R.string.toast_message_successfully_added_move, Toast.LENGTH_SHORT).show();
-            mBinding.button.setVisibility(View.INVISIBLE);
+            Uri deleteUri = Uri.parse(MovieContract.CONTENT_URI.toString())
+                    .buildUpon()
+                    .appendPath(mMovieData.getId())
+                    .build();
+            serviceIntent.setData(deleteUri);
+            serviceIntent.setAction(Tasks.ACTION_DELETE_RECORD);
+            startService(serviceIntent);
         }
-
     }
+
 
     public void isMoveFavorite() {
         //this is just done as an async task as this is a one time operation
         CheckMovieFavoriteTask checkMovieFavoriteTask = new CheckMovieFavoriteTask();
         checkMovieFavoriteTask.execute(mMovieData);
-
 
     }
 
@@ -263,14 +269,25 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
         @Override
         protected void onPostExecute(Boolean inFavorites) {
-            if(inFavorites){
-                mBinding.button.setVisibility(View.INVISIBLE);
+            if (inFavorites) {
+                mBinding.lvTrailers.setVisibility(View.INVISIBLE);
+                mBinding.tvHeaderReviews.setVisibility(View.INVISIBLE);
+                mBinding.tvTopMoviesHeading.setVisibility(View.INVISIBLE);
+                mBinding.button.setText(R.string.btn_not_favorite);
+                isFavorite = true;
+                loadImage();
+
             } else {
                 mBinding.button.setVisibility(View.VISIBLE);
+                mBinding.lvTrailers.setVisibility(View.VISIBLE);
+                mBinding.button.setText(R.string.btn_favorite);
+                mBinding.tvHeaderReviews.setVisibility(View.VISIBLE);
+                mBinding.tvTopMoviesHeading.setVisibility(View.VISIBLE);
+                isFavorite = false;
+                loadImage();
             }
-
+            setUpLoaders();
         }
-
 
 
         @Override
@@ -281,25 +298,82 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                     .buildUpon()
                     .appendPath(id)
                     .build();
-            Log.i(TAG, newUri.toString());
 
-            String[]projection = new String[]{MovieContract.MovieEntry.COLUMN_NAME_MOVIE_ID};
+
+            String[] projection = new String[]{MovieContract.MovieEntry.COLUMN_NAME_MOVIE_ID};
 
             Cursor cursor = getContentResolver().query(newUri, projection, null, null, null);
 
-            if(cursor.getCount() == 1){
+            if (cursor.getCount() == 1) {
                 cursor.close();
                 return true;
-            }else {
+            } else {
                 cursor.close();
                 return false;
             }
 
+        }
+    }
 
+    public void setUpLoaders() {
+        //initialize loaders
+        if (isFavorite) {
+            return;// do not load review and trailers if movie is favorite
+        } else {
+            mLoadManager = getLoaderManager();
+            mLoadManager.initLoader(TRAILER_LOADER_ID, null, this);
+            mLoadManager.initLoader(REVIEW_LOADER_ID, null, this);
+        }
+    }
+
+    public void loadImage() {
+        if (isFavorite) {
+            Bitmap poster = Utils.getPoster(mMovieData.getmPoster());
+            mBinding.imageViewDetailPoster.setImageBitmap(poster);
+        } else {
+            Utils.loadPosterImage(mBinding.imageViewDetailPoster, DetailActivity.this, mMovieData.getmPosterPath());
         }
 
     }
+
+    public void updateAddRemoveButton() {
+        if (isFavorite) {
+            mBinding.button.setText(R.string.btn_favorite);
+        } else {
+            mBinding.button.setText(R.string.btn_not_favorite);
+        }
+
+        isFavorite = !isFavorite;
+    }
+
+    //create a customBroadcastReceiver to handle response from service
+    private class SavedDataBroadcastReceiver extends BroadcastReceiver {
+
+        private SavedDataBroadcastReceiver() {
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            if (action.equals(Tasks.INSERT_COMPLETE)) {
+                Toast.makeText(getBaseContext(), R.string.toast_message_successfully_added_move, Toast.LENGTH_SHORT).show();
+                updateAddRemoveButton();
+            } else if (action.equals(Tasks.INSERT_FAIL)) {
+                Toast.makeText(getBaseContext(), R.string.toast_message_unsuccessfully_add_move, Toast.LENGTH_SHORT).show();
+                updateAddRemoveButton();
+            } else if (action.equals(Tasks.DELETE_COMPLETE)) {
+                Toast.makeText(getBaseContext(), R.string.delete_sucessful_message, Toast.LENGTH_SHORT).show();
+                updateAddRemoveButton();
+            } else if (action.equals(Tasks.DELETE_FAIL)) {
+                Toast.makeText(getBaseContext(), R.string.delete_unsucessful_message, Toast.LENGTH_SHORT).show();
+                updateAddRemoveButton();
+            } else {
+                throw new IllegalArgumentException("Invalid response from broadcast");
+            }
+        }
+    }
 }
+
 
 
 

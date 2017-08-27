@@ -22,12 +22,14 @@
             android:parentActivityName=".activities.ListActivity">
 
         </activity>
-        <activity android:name=".activities.FavoritesActivity"
-            android:parentActivityName=".activities.ListActivity"></activity>
 
         <provider
             android:authorities="uk.co.sloshyd.popularmovies"
             android:name=".data.PopularMovieContentProvider"
+            android:exported="false"/>
+
+        <service
+            android:name=".sync.LoadDataService"
             android:exported="false"/>
     </application>
 

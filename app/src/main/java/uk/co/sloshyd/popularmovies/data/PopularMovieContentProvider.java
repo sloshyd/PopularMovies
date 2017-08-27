@@ -38,7 +38,7 @@ public class PopularMovieContentProvider extends ContentProvider {
         SQLiteDatabase db = mDbHelper.getReadableDatabase();
         Cursor cursor;
 
-        switch (match){
+        switch (match) {
             case MOVIES_DIRECTORY:
 
                 cursor = db.query(
@@ -77,7 +77,21 @@ public class PopularMovieContentProvider extends ContentProvider {
     @Nullable
     @Override
     public String getType(@NonNull Uri uri) {
-        return null;
+        int match = sUriMatcher.match(uri);
+
+        String mimeType;
+        switch (match) {
+            case MOVIES_ITEM:
+                mimeType = "vnd.android.cursor.dir/co.uk.sloshyd.provider.movies";
+                break;
+            case MOVIES_DIRECTORY:
+                mimeType = "vnd.android.cursor.dir/co.uk.sloshyd.provider.movie";
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported URI");
+
+        }
+        return mimeType;
     }
 
     @Nullable
@@ -86,63 +100,74 @@ public class PopularMovieContentProvider extends ContentProvider {
 
         int match = sUriMatcher.match(uri);
 
-        switch (match){
+        switch (match) {
             case MOVIES_DIRECTORY:
-                if(!validateData(values)){
-                    return null;//if data is not valid return null
-                } else{
-                    SQLiteDatabase sqLiteDatabase = mDbHelper.getWritableDatabase();
-                    try {
-                       long id = sqLiteDatabase.insert(MovieContract.MovieEntry.MOVIES_TABLE_NAME, null, values);
-                        if (id == -1) {
-                            return null; //IMPORTANT to let calling method know that the insertion failed
-                        }
-                        // must let loader know that something has changed
-                        getContext().getContentResolver().notifyChange(uri, null);
-                        break;
-                    }catch (IllegalArgumentException e){
-                        Log.i(TAG, "Error loading data");
+                SQLiteDatabase sqLiteDatabase = mDbHelper.getWritableDatabase();
+                try {
+                    long id = sqLiteDatabase.insert(MovieContract.MovieEntry.MOVIES_TABLE_NAME, null, values);
+                    if (id == -1) {
+                        return null; //IMPORTANT to let calling method know that the insertion failed
                     }
+                    // must let loader know that something has changed
+                    getContext().getContentResolver().notifyChange(uri, null);
+                    break;
+                } catch (IllegalArgumentException e) {
+                    Log.i(TAG, "Error loading data");
                 }
-            default:
-                throw new IllegalArgumentException("Invalid Insertion Uri");
-        }
+
+        default:
+        throw new IllegalArgumentException("Invalid Insertion Uri");
+    }
 
         return uri;
 
-    }
+}
+
 
     @Override
     public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
-        return 0;
+
+        SQLiteDatabase sqLiteDatabase = mDbHelper.getWritableDatabase();
+
+        int match = sUriMatcher.match(uri);
+        int rowsDeleted;
+        switch (match) {
+            case MOVIES_ITEM:
+
+                selection = MovieContract.MovieEntry.COLUMN_NAME_MOVIE_ID + "=?";//selection field
+                String movieId = uri.getLastPathSegment();
+                selectionArgs = new String[]{movieId};//selection arg
+
+                rowsDeleted = sqLiteDatabase.delete(
+                        MovieContract.MovieEntry.MOVIES_TABLE_NAME,
+                        selection,
+                        selectionArgs
+                );
+
+                break;
+            default:
+                throw new IllegalArgumentException("Unable to delete URI is not supported");
+        }
+        return rowsDeleted;
+
     }
 
     @Override
     public int update(@NonNull Uri uri, @Nullable ContentValues values, @Nullable String selection, @Nullable String[] selectionArgs) {
         return 0;
+        //Not supported in current version
     }
 
     private static final UriMatcher sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 
-    // Static initializer. This is run the first time anything is called from this class.
-    static {
+// Static initializer. This is run the first time anything is called from this class.
+static {
         // The calls to addURI() go here, for all of the content URI patterns that the provider
         // should recognize. All paths added to the UriMatcher have a corresponding code to return
         // when a match is found.
 
-        sUriMatcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.MOVIES_PATH, MOVIES_DIRECTORY);
-        sUriMatcher.addURI(MovieContract.CONTENT_AUTHORITY, MovieContract.MOVIES_PATH + "/#", MOVIES_ITEM);// if string use * unless specific string
-    }
+        sUriMatcher.addURI(MovieContract.CONTENT_AUTHORITY,MovieContract.MOVIES_PATH,MOVIES_DIRECTORY);
+        sUriMatcher.addURI(MovieContract.CONTENT_AUTHORITY,MovieContract.MOVIES_PATH+"/#",MOVIES_ITEM);// if string use * unless specific string
+        }
 
-    public boolean validateData(ContentValues contentValues){
-
-        boolean dataValid = true;
-        //check to ensure only valid data is placed in the database
-        contentValues = null;
-
-        //TODO COMPLETE THIS
-
-
-        return dataValid;
-    }
-}
+        }

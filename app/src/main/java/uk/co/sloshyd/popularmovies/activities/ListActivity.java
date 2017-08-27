@@ -5,27 +5,27 @@ import android.app.LoaderManager;
 import android.content.Intent;
 import android.content.Loader;
 import android.content.SharedPreferences;
-import android.net.Uri;
-import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 
 import uk.co.sloshyd.popularmovies.Loaders.MovieDataLoader;
+import uk.co.sloshyd.popularmovies.Loaders.SavedDataLoader;
 import uk.co.sloshyd.popularmovies.R;
 import uk.co.sloshyd.popularmovies.Utils;
 import uk.co.sloshyd.popularmovies.adapters.MovieAdapter;
 import uk.co.sloshyd.popularmovies.data.MovieClass;
 import uk.co.sloshyd.popularmovies.data.MovieContract;
 
-public class ListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<MovieClass[]> ,
-        MovieAdapter.MovieAdapterOnClickHandler{
+public class ListActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<MovieClass[]>,
+        MovieAdapter.MovieAdapterOnClickHandler {
 
     public static final int INTERNET_DATA_LOADER_ID = 1;
     private static final String TAG = ListActivity.class.getSimpleName();
@@ -51,64 +51,61 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
         //setup preference
         mSharedPreferences = getPreferences(MODE_PRIVATE);
-        String sharedPreference = mSharedPreferences.getString(ORDER_BY,SORT_BY_DEFAULT);
-        Log.i(TAG, "SHARED PREF: " + sharedPreference);
         setCustomTitle();
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
-
-
         //set up Error message for no returned data
         mErrorTextView = (TextView) findViewById(R.id.tv_error_message_display);
         //get reference to RecyclerView
         mRecyclerView = (RecyclerView) findViewById(R.id.receyler_view);
         //set up layout manager
         GridLayoutManager layoutManager = new GridLayoutManager(this, 2);
-
         mRecyclerView.setHasFixedSize(true);
         mRecyclerView.setLayoutManager(layoutManager);
         mAdapter = new MovieAdapter(this, this);
         mRecyclerView.setAdapter(mAdapter);
 
+
     }
 
     private void setCustomTitle() {
 
-      if (mSharedPreferences.getString(ORDER_BY, SORT_BY_DEFAULT).equals(Utils.TOP_RATED_MOVIE_URL)) {
+        if (mSharedPreferences.getString(ORDER_BY, SORT_BY_DEFAULT).equals(Utils.TOP_RATED_MOVIE_URL)) {
             setTitle(R.string.top_rated_movies_menu_title);
-        } else {
+        } else if (mSharedPreferences.getString(ORDER_BY, SORT_BY_DEFAULT).equals(Utils.POPULAR_MOVIE_URL)) {
             setTitle(R.string.popular_movies_menu_title);
+        } else {
+            setTitle(R.string.my_favorite_movies_menu_title);
         }
     }
 
-    public void setUpLoader(){
+    public void setUpLoader() {
         //set up loadManager
-        mSortOrder = mSharedPreferences.getString(ORDER_BY,null); //the default is to sort by popular if there is no entry or an error then the default will be selected
+        mSortOrder = mSharedPreferences.getString(ORDER_BY, SORT_BY_DEFAULT); //the default is to sort by popular if there is no entry or an error then the default will be selected
         mLoadManager = getLoaderManager();
         mLoadManager.initLoader(INTERNET_DATA_LOADER_ID, null, this);
         mProgressBar.setVisibility(View.VISIBLE);
     }
 
-    public void showLoadingErrorMessage(){
+    public void showLoadingErrorMessage() {
         mRecyclerView.setVisibility(View.INVISIBLE);
         mErrorTextView.setVisibility(View.VISIBLE);
     }
 
-    public void hideLoadingErrorMessage(){
+    public void hideLoadingErrorMessage() {
         mRecyclerView.setVisibility(View.VISIBLE);
         mErrorTextView.setVisibility(View.INVISIBLE);
     }
 
 
-
     @Override
     public Loader<MovieClass[]> onCreateLoader(int i, Bundle bundle) {
 
-        if(mSortOrder.equals(Utils.TOP_RATED_MOVIE_URL) ){
-            Log.i(TAG, "MSORTORDER : " + mSortOrder);
+        if (mSortOrder.equals(Utils.TOP_RATED_MOVIE_URL)) {
             return new MovieDataLoader(this, Utils.TOP_RATED_MOVIE_URL);
-        } else {
-            Log.i(TAG, "MSORTORDER : " + mSortOrder);
+        } else if (mSortOrder.equals(Utils.POPULAR_MOVIE_URL)) {
             return new MovieDataLoader(this, Utils.POPULAR_MOVIE_URL);
+        } else {
+            return new SavedDataLoader(this);
 
         }
 
@@ -119,7 +116,7 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
         mProgressBar.setVisibility(View.INVISIBLE);
         mMovieClasses = movieClasses;
-        if(movieClasses == null){
+        if (movieClasses == null) {
             showLoadingErrorMessage();
         } else {
             hideLoadingErrorMessage();
@@ -135,7 +132,9 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
 
     @Override
-    public void onClick(MovieClass movieDataItem) {
+    public void onClick(MovieClass movieDataItem, ImageView imageView) {
+        byte[] poster = Utils.getImageDataFromView(imageView);
+        movieDataItem.setPosterData(poster);
         Intent intent = new Intent(this, DetailActivity.class);
         intent.putExtra(Utils.INTENT_PUTEXTRA_MOVIE_DATA, movieDataItem);
         startActivity(intent);
@@ -182,8 +181,11 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
             case R.id.action_my_favorites:
                 mLoadManager.destroyLoader(INTERNET_DATA_LOADER_ID);
-                Intent intent = new Intent(this, FavoritesActivity.class);
-                startActivity(intent);
+                editor = mSharedPreferences.edit();
+                editor.putString(ORDER_BY, MovieContract.CONTENT_URI.toString());
+                editor.commit();
+                setUpLoader();
+                invalidateOptionsMenu();
                 break;
 
         }

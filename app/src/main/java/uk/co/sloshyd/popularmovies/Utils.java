@@ -1,7 +1,11 @@
 package uk.co.sloshyd.popularmovies;
 
+import android.app.Activity;
 import android.content.ContentValues;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.net.Uri;
 import android.util.Log;
 import android.widget.ImageView;
@@ -12,6 +16,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -233,5 +238,30 @@ public class Utils {
 
         return new String (BASE_URL + movieId + URL_REVIEWS + API_KEY);
     }
+
+    public static Bitmap getPoster(byte[] poster){
+        if(poster == null){
+            return null;
+        }
+        Bitmap bitmap = BitmapFactory.decodeByteArray(poster, 0, poster.length);
+        return bitmap;
+    }
+
+    public static byte[] getImageDataFromView(ImageView imageView){
+
+        Bitmap bitmap = ((BitmapDrawable) imageView.getDrawable()).getBitmap();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, baos);
+        byte[] imageInByte = baos.toByteArray();
+
+        try {
+                baos.close();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return imageInByte;
+    }
+
 
 }

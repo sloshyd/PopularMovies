@@ -1,6 +1,8 @@
 package uk.co.sloshyd.popularmovies.adapters;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -29,7 +31,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     //use the handler to get the selected list item object so it can be passed to the Activity where intent can be called
     public interface MovieAdapterOnClickHandler {
-        void onClick(MovieClass movieDataItem);
+        void onClick(MovieClass movieDataItem, ImageView imageView);
     }
 
     @Override
@@ -47,8 +49,16 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
 
     @Override
     public void onBindViewHolder(MovieAdapterViewHolder holder, int position) {
+
         String posterReference = mMovies[position].getmPosterPath();
-        Utils.loadPosterImage(holder.mPosterImage, mContext, posterReference);
+        if(posterReference!=null){
+            Utils.loadPosterImage(holder.mPosterImage, mContext, posterReference);
+        } else {
+            byte [] poster = mMovies[position].getmPoster();
+            Bitmap bitmap = Utils.getPoster(poster);
+            holder.mPosterImage.setImageBitmap(bitmap);
+        }
+
 
     }
 
@@ -67,7 +77,7 @@ public class MovieAdapter extends RecyclerView.Adapter<MovieAdapter.MovieAdapter
             //get position in adapter
             int position = getAdapterPosition();
             MovieClass selectedMovie = mMovies[position];
-            mClickHandler.onClick(selectedMovie);//handler can now pass this to activity
+            mClickHandler.onClick(selectedMovie,mPosterImage);//handler can now pass this to activity
 
 
         }
