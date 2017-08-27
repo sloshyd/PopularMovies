@@ -35,7 +35,7 @@ import uk.co.sloshyd.popularmovies.data.MovieClass;
 
 public class Utils {
 
-    private static final String API_KEY = "api_key=8fa9c9ea7b5ebdfac69758e769f80f04";
+    private static final String API_KEY = "";
     private static final String BASE_URL = "http://api.themoviedb.org/3/movie/";
     private static final String URL_POPULAR = "popular?";
     private static final String URL_RATED = "top_rated?";
