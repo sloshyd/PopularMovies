@@ -116,7 +116,7 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
         mProgressBar.setVisibility(View.INVISIBLE);
         mMovieClasses = movieClasses;
-        if (movieClasses == null) {
+        if (movieClasses == null || movieClasses.length == 0) {
             showLoadingErrorMessage();
         } else {
             hideLoadingErrorMessage();
