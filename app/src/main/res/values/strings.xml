@@ -20,4 +20,5 @@
     <string name="tv_no_favorites_message">Opps !!!! - We are unable to find any favorites.  Please select movie and add it to your favorites using the \"add favorite\" button</string>
     <string name="delete_sucessful_message">Removed from favorites</string>
     <string name="delete_unsucessful_message">Unable to remove from favorites</string>
+    <string name="no_data">Oops! No movies have been added to your favorites.  Browes through movies and select ADD FAVORITE to add to your favorites.</string>
 </resources>

@@ -35,15 +35,15 @@ public class Utils {
 
     private static final String API_KEY = "";
     private static final String BASE_URL = "http://api.themoviedb.org/3/movie/";
-    private static final String URL_POPULAR = "popular?";
-    private static final String URL_RATED = "top_rated?";
+    private static final String URL_POPULAR = "popular?api_key=";
+    private static final String URL_RATED = "top_rated?api_key=";
     public static final String POPULAR_MOVIE_URL = BASE_URL + URL_POPULAR + API_KEY;
     public static final String TOP_RATED_MOVIE_URL = BASE_URL + URL_RATED + API_KEY;
     public static final String IMAGE_BASE_URL = "http://image.tmdb.org/t/p/w185/";
     //API destination for Trailers
 
-    public static final String URL_MOVIE_TRAILER = "/videos?";
-    public static final String URL_REVIEWS = "/reviews?";
+    public static final String URL_MOVIE_TRAILER = "/videos?api_key=";
+    public static final String URL_REVIEWS = "/reviews?api_key=";
     //JSON Key names Movie Data
     private static final String POSTER_PATH = "poster_path";
     private static final String OVERVIEW = "overview";
@@ -75,6 +75,7 @@ public class Utils {
     public static String getResponseFromHttpUrl(URL url) throws IOException {
 
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+        urlConnection.setConnectTimeout(2000);
 
         try {
 
@@ -132,8 +133,6 @@ public class Utils {
                 voteAverage = movieData.getDouble(VOTE_AVERAGE);
                 movieId = movieData.getString(MOVIE_ID);
 
-                Log.i(TAG, posterPath + overView + releaseDate + title + voteAverage + "id " + movieId);
-
                 jsonParsedDataArray[i] =
                         new MovieClass(posterPath, overView, releaseDate, title, voteAverage, movieId);
             }
@@ -176,7 +175,6 @@ public class Utils {
                 contentValues.put(CV_TRAILER_TITLE_KEY, nameOfTrailer);
                 values[i] = contentValues;
             }
-
 
         } catch (JSONException e) {
             Log.e(TAG, "Error Parsing Trailer JSON " + e);

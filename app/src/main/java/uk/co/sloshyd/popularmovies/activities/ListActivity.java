@@ -8,7 +8,9 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -29,29 +31,36 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
 
     public static final int INTERNET_DATA_LOADER_ID = 1;
     private static final String TAG = ListActivity.class.getSimpleName();
-
-
     private LoaderManager mLoadManager;
     private MovieAdapter mAdapter;
     private RecyclerView mRecyclerView;
     private TextView mErrorTextView;
     private ProgressBar mProgressBar;
     private MovieClass[] mMovieClasses;
+    private TextView mNoData;//view to display when no data is added to myMovies but list is selected
     //sharedPreference
     private String mSortOrder;
     SharedPreferences mSharedPreferences;
     private static final String SORT_BY_DEFAULT = Utils.POPULAR_MOVIE_URL;//sets default option to Popular movie
     public static final String ORDER_BY = "order";
+    //save state - save position in the RecyleView
+    public static final String SAVED_POSITION = "savedPosition";
+    private int mSavedPosition = 0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_list);
 
-
+        if(savedInstanceState !=null){
+            mSavedPosition = savedInstanceState.getInt(SAVED_POSITION);
+        }
         //setup preference
         mSharedPreferences = getPreferences(MODE_PRIVATE);
+
         setCustomTitle();
+        mNoData = (TextView) findViewById(R.id.tv_no_data_message_display);
         mProgressBar = (ProgressBar) findViewById(R.id.progress_bar);
         //set up Error message for no returned data
         mErrorTextView = (TextView) findViewById(R.id.tv_error_message_display);
@@ -63,8 +72,17 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
         mRecyclerView.setLayoutManager(layoutManager);
         mAdapter = new MovieAdapter(this, this);
         mRecyclerView.setAdapter(mAdapter);
+        setUpLoader();
+
+    }
 
 
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        mSavedPosition = ((LinearLayoutManager)mRecyclerView.getLayoutManager()).findFirstVisibleItemPosition();
+        outState.putInt(SAVED_POSITION, mSavedPosition);
     }
 
     private void setCustomTitle() {
@@ -84,16 +102,26 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
         mLoadManager = getLoaderManager();
         mLoadManager.initLoader(INTERNET_DATA_LOADER_ID, null, this);
         mProgressBar.setVisibility(View.VISIBLE);
+        //restore position in list after change to state - will be default 0
+        mRecyclerView.getLayoutManager().scrollToPosition(mSavedPosition);
     }
 
     public void showLoadingErrorMessage() {
         mRecyclerView.setVisibility(View.INVISIBLE);
-        mErrorTextView.setVisibility(View.VISIBLE);
+
+        if(mSortOrder.equals(MovieContract.CONTENT_URI.toString())){
+            mErrorTextView.setVisibility(View.INVISIBLE);
+            mNoData.setVisibility(View.VISIBLE);
+        }else{
+            mErrorTextView.setVisibility(View.VISIBLE);
+        }
+
     }
 
     public void hideLoadingErrorMessage() {
         mRecyclerView.setVisibility(View.VISIBLE);
         mErrorTextView.setVisibility(View.INVISIBLE);
+        mNoData.setVisibility(View.INVISIBLE);
     }
 
 
@@ -106,7 +134,6 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
             return new MovieDataLoader(this, Utils.POPULAR_MOVIE_URL);
         } else {
             return new SavedDataLoader(this);
-
         }
 
     }
@@ -137,24 +164,19 @@ public class ListActivity extends AppCompatActivity implements LoaderManager.Loa
         movieDataItem.setPosterData(poster);
         Intent intent = new Intent(this, DetailActivity.class);
         intent.putExtra(Utils.INTENT_PUTEXTRA_MOVIE_DATA, movieDataItem);
+        intent.putExtra(ORDER_BY, mSortOrder);
         startActivity(intent);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.list_menu, menu);
-
         invalidateOptionsMenu();
         setCustomTitle();
         return true;
     }
 
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        setUpLoader();
-    }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {

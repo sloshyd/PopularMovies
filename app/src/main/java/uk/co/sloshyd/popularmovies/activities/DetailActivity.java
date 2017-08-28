@@ -33,6 +33,8 @@ import uk.co.sloshyd.popularmovies.databinding.ActivityDetailBinding;
 import uk.co.sloshyd.popularmovies.sync.LoadDataService;
 import uk.co.sloshyd.popularmovies.sync.Tasks;
 
+import static uk.co.sloshyd.popularmovies.activities.ListActivity.SAVED_POSITION;
+
 
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<ContentValues[]> {
 
@@ -48,13 +50,16 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     public static final String TAG = DetailActivity.class.getSimpleName();
     public boolean isFavorite;
     public SavedDataBroadcastReceiver mBroadcastReceiver;
-
+    public String mSortBy;//used to determine how data is managed in the views - data from the list of savedFavorites does not show trailers or comments
+    private String SAVED_SCROLL_POSITION = "scrollPosition";
+    private int mSavedPosition = 0;
 
     @Override
     public void onBackPressed() {
         super.onBackPressed();
         finish();
     }
+
 
     @Override
     protected void onDestroy() {
@@ -70,6 +75,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         mBinding = DataBindingUtil.setContentView(this, R.layout.activity_detail);
         Intent intent = getIntent();
         mMovieData = intent.getParcelableExtra(Utils.INTENT_PUTEXTRA_MOVIE_DATA);
+        mSortBy = intent.getStringExtra(ListActivity.ORDER_BY);
+        setUpDetailLayout();//the layout varies depending if the listing is from Populat/TopRated and myFavorites
         isMoveFavorite();
 
         mBinding.tvDetailTitle.setText(mMovieData.getmTitle());
@@ -79,7 +86,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         String averageVoteString = Double.toString(mMovieData.getmAverageVote());
         String outOfTenVote = averageVoteString + " / 10 ";
         mBinding.viewDetailVotes.setText(outOfTenVote);
-
+        setUpLoaders();
         //set up adapter for the reviews section
         mBinding.reviewsRecylerView.findViewById(R.id.reviews_recyler_view);
         LinearLayoutManager layoutManager = new LinearLayoutManager(this, LinearLayoutManager.VERTICAL, false);
@@ -96,7 +103,10 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         filter.addAction(Tasks.DELETE_FAIL);
         LocalBroadcastManager.getInstance(this).registerReceiver(
                 mBroadcastReceiver, filter);
-
+        if(savedInstanceState != null){
+            mSavedPosition = savedInstanceState.getInt(SAVED_SCROLL_POSITION);
+            mBinding.svDetails.scrollTo(0, (int) mSavedPosition);
+        }
     }
 
     @Override
@@ -141,6 +151,13 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+
+        outState.putFloat(SAVED_SCROLL_POSITION,mBinding.svDetails.getY());
+    }
+
+    @Override
     public void onLoaderReset(Loader loader) {
         int id = loader.getId();
 
@@ -155,7 +172,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             default:
                 throw new IllegalArgumentException("Invalid loader id");
         }
-
     }
 
 
@@ -200,7 +216,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         playIcon.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                launchTrailerIntent(v, trailerID);
+                    launchTrailerIntent(v, trailerID);
             }
         });
         ImageView shareIcon = (ImageView) v.findViewById(R.id.iv_share_trailer_icon);
@@ -221,13 +237,20 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
             case R.id.iv_play_trailer_icon:
                 Intent launchVideo = new Intent(Intent.ACTION_VIEW, uri);
-                startActivity(launchVideo);
+                if(launchVideo.resolveActivity(getPackageManager())!=null){
+                    startActivity(launchVideo);
+                }
+
                 break;
             case R.id.iv_share_trailer_icon:
                 Intent sharingIntent = new Intent(Intent.ACTION_SEND);
                 sharingIntent.setType("text/plain");
                 sharingIntent.putExtra(android.content.Intent.EXTRA_TEXT, uri.toString());
-                startActivity(Intent.createChooser(sharingIntent, "Share using"));
+
+                if(sharingIntent.resolveActivity(getPackageManager())!= null){
+                    startActivity(Intent.createChooser(sharingIntent, "Share using"));
+                }
+
                 break;
             default:
                 break;
@@ -264,31 +287,35 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
     }
 
+    public void setUpDetailLayout(){
+        //MyFavorites list does not display reviews or trailers
+        if(mSortBy.equals(MovieContract.CONTENT_URI.toString())){
+            mBinding.lvTrailers.setVisibility(View.INVISIBLE);
+            mBinding.tvHeaderReviews.setVisibility(View.INVISIBLE);
+            mBinding.tvTopMoviesHeading.setVisibility(View.INVISIBLE);
+        }else{
+            mBinding.tvHeaderReviews.setVisibility(View.VISIBLE);
+            mBinding.tvTopMoviesHeading.setVisibility(View.VISIBLE);
+            mBinding.lvTrailers.setVisibility(View.VISIBLE);
+        }
+    }
 
     public class CheckMovieFavoriteTask extends AsyncTask<MovieClass, String, Boolean> {
 
         @Override
         protected void onPostExecute(Boolean inFavorites) {
             if (inFavorites) {
-                mBinding.lvTrailers.setVisibility(View.INVISIBLE);
-                mBinding.tvHeaderReviews.setVisibility(View.INVISIBLE);
-                mBinding.tvTopMoviesHeading.setVisibility(View.INVISIBLE);
                 mBinding.button.setText(R.string.btn_not_favorite);
                 isFavorite = true;
                 loadImage();
 
             } else {
-                mBinding.button.setVisibility(View.VISIBLE);
-                mBinding.lvTrailers.setVisibility(View.VISIBLE);
                 mBinding.button.setText(R.string.btn_favorite);
-                mBinding.tvHeaderReviews.setVisibility(View.VISIBLE);
-                mBinding.tvTopMoviesHeading.setVisibility(View.VISIBLE);
                 isFavorite = false;
                 loadImage();
             }
             setUpLoaders();
         }
-
 
         @Override
         protected Boolean doInBackground(MovieClass... params) {
@@ -298,7 +325,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                     .buildUpon()
                     .appendPath(id)
                     .build();
-
 
             String[] projection = new String[]{MovieContract.MovieEntry.COLUMN_NAME_MOVIE_ID};
 
@@ -311,13 +337,12 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 cursor.close();
                 return false;
             }
-
         }
     }
 
     public void setUpLoaders() {
         //initialize loaders
-        if (isFavorite) {
+        if (mSortBy.equals(MovieContract.CONTENT_URI.toString())) {
             return;// do not load review and trailers if movie is favorite
         } else {
             mLoadManager = getLoaderManager();
@@ -342,7 +367,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         } else {
             mBinding.button.setText(R.string.btn_not_favorite);
         }
-
         isFavorite = !isFavorite;
     }
 
